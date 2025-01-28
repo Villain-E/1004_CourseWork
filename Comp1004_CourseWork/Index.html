@@ -1,0 +1,174 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Comp1004_CourseWork_Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+</head>
+<body>
+
+    <script type="text/javascript">
+
+        var config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 300 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        var game = new Phaser.Game(config);
+        var titleText;
+        var endText;
+        var platforms;
+        var player;
+        var goal;
+        var spikes;
+        var gameOver = false;
+        var stop = 0;
+        var level = 0;
+        var levelText;
+
+        function preload() {
+            this.load.image('sky', 'assets/background.png');
+            this.load.image('ground', 'assets/platform.png');
+            this.load.image('flag', 'assets/flag.png');
+            this.load.image('spikes', 'assets/spike.png');
+            this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
+        }
+
+        function create() {
+            this.add.image(400, 300, 'sky');
+
+            platforms = this.physics.add.staticGroup();
+
+            goal = this.physics.add.staticGroup();
+
+            spikes = this.physics.add.staticGroup();
+
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+
+            goal.create(750, 512, 'flag');
+
+            titleText = this.add.text(210, 20, "Iridia's Journey", { fontSize: '40px', fill: '#FFF' });
+
+            player = this.physics.add.sprite(40, 490, 'Iridia').setScale(1).refreshBody();
+
+            player.setBounce(0.1);
+            player.setCollideWorldBounds(true);
+            player.body.setGravityY(300)
+
+            this.anims.create({
+                key: 'left',
+                frames: this.anims.generateFrameNumbers('Iridia', { start: 0, end: 3 }),
+                frameRate: 8,
+                repeat: -1
+            });
+
+            this.anims.create({
+                key: 'stand',
+                frames: [{ key: 'Iridia', frame: 4 }],
+                frameRate: 20
+            });
+
+            this.anims.create({
+                key: 'right',
+                frames: this.anims.generateFrameNumbers('Iridia', { start: 5, end: 8 }),
+                frameRate: 8,
+                repeat: -1
+            });
+
+            this.physics.add.collider(player, platforms);
+
+            this.physics.add.overlap(player, goal, reachGoal, null, this);
+
+            this.physics.add.overlap(player, spikes, hitSpike, null, this);
+
+            cursors = this.input.keyboard.createCursorKeys();
+
+            levelText = this.add.text(8, 570, '', { fontSize: '24px', fill: '#FFF' });
+        }
+
+        function update() {
+
+            if (gameOver) {
+                endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });
+                return;
+            }
+
+            if (cursors.left.isDown) {
+                player.setVelocityX(-160);
+
+                player.anims.play('left', true);
+            }
+
+            else if (cursors.right.isDown) {
+                player.setVelocityX(160);
+
+                player.anims.play('right', true);
+            }
+
+            else {
+                player.setVelocityX(0);
+
+                player.anims.play('stand');
+            }
+
+            if (cursors.up.isDown && player.body.touching.down) {
+                player.setVelocityY(-400);
+            }
+
+            if (stop == 0) {
+                setLevel();
+            }
+
+        }
+
+        function setLevel() {
+            if (level == 1) {
+                stop++;
+                goal.create(750, 390, 'flag');
+                titleText.setText();
+            }
+
+            else if (level == 2) {
+                stop++;
+                spikes.create(500, 406, 'spikes')
+            }
+        }
+
+        function reachGoal(player, goal) {
+            stop = 0;
+            level += 1;
+            levelText.setText('Level: ' + level);
+            player.setY(490);
+            player.setX(40);
+            if (level == 1) {
+                platforms.create(600, 430, 'ground');
+                goal.disableBody(true, true);
+            }
+
+        }
+
+        function hitSpike(player, spikes) {
+            this.physics.pause();
+            player.setTint(0xff0000);
+
+            player.anims.play('stand');
+
+            gameOver = true;
+        }
+    </script>
+
+</body>
+</html>
