@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -34,6 +34,8 @@
         var player;
         var goal;
         var spikes;
+        var fires;
+        var shurikens;
         var gameOver = false;
         var stop = 0;
         var level = 0;
@@ -44,6 +46,8 @@
             this.load.image('ground', 'assets/platform.png');
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
+            this.load.image('fire', 'assets/Temp-fire.png');
+            this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
         }
 
@@ -56,13 +60,17 @@
 
             spikes = this.physics.add.staticGroup();
 
+            fires = this.physics.add.group();
+
+            shurikens = this.physics.add.group();
+
             platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
             goal.create(750, 512, 'flag');
 
             titleText = this.add.text(210, 20, "Iridia's Journey", { fontSize: '40px', fill: '#FFF' });
 
-            player = this.physics.add.sprite(40, 490, 'Iridia').setScale(1).refreshBody();
+            player = this.physics.add.sprite(40, 490, 'Iridia').setScale(0.8).refreshBody();
 
             player.setBounce(0.1);
             player.setCollideWorldBounds(true);
@@ -88,11 +96,22 @@
                 repeat: -1
             });
 
+            this.anims.create({
+                key: 's_Spin',
+                frames: this.anims.generateFrameNumbers('shuriken', { start: 0, end: 1 }),
+                frameRate: 8,
+                repeat: -1
+            });
+
             this.physics.add.collider(player, platforms);
+            this.physics.add.collider(fires, platforms);
+            this.physics.add.collider(shurikens, platforms);
 
             this.physics.add.overlap(player, goal, reachGoal, null, this);
 
-            this.physics.add.overlap(player, spikes, hitSpike, null, this);
+            this.physics.add.overlap(player, spikes, hitPlayer, null, this);
+            this.physics.add.overlap(player, fires, hitPlayer, null, this);
+            this.physics.add.overlap(player, shurikens, hitPlayer, null, this);
 
             cursors = this.input.keyboard.createCursorKeys();
 
@@ -135,15 +154,52 @@
         }
 
         function setLevel() {
+            stop++;
+
             if (level == 1) {
-                stop++;
+                platforms.create(700, 430, 'ground');
                 goal.create(750, 390, 'flag');
                 titleText.setText();
             }
 
             else if (level == 2) {
-                stop++;
-                spikes.create(500, 406, 'spikes')
+                spikes.create(600, 406, 'spikes');
+            }
+
+            else if (level == 3) {
+                platforms.create(850, 300, 'ground');
+            }
+
+            else if (level == 4) {
+                platforms.create(350, 220, 'ground');
+                goal.create(260, 180, 'flag');
+            }
+
+            else if (level == 5) {
+                var fire = fires.create(400, 180, 'fire');
+                fire.setVelocityY(250);
+                fire.setBounce(1);
+                fire.setCollideWorldBounds(true);
+                fire.body.setGravityY(-300);
+            }
+
+            else if (level == 6) {
+                goal.create(40, 310, 'flag');
+                var shuriken = shurikens.create(100, 222, 'shuriken');
+                shuriken.anims.play('s_Spin', true);
+                shuriken.setVelocityX(250);
+                shuriken.setBounce(1);
+                shuriken.setCollideWorldBounds(true);
+                shuriken.body.setGravityY(-300);
+            }
+
+            else if (level == 7) {
+                var shuriken = shurikens.create(400, 480, 'shuriken');
+                shuriken.anims.play('s_Spin', true);
+                shuriken.setVelocityX(-400);
+                shuriken.setBounce(1);
+                shuriken.setCollideWorldBounds(true);
+                shuriken.body.setGravityY(-300);
             }
         }
 
@@ -153,22 +209,20 @@
             levelText.setText('Level: ' + level);
             player.setY(490);
             player.setX(40);
-            if (level == 1) {
-                platforms.create(600, 430, 'ground');
+            if (level == 1 || level == 4 || level == 6) {
                 goal.disableBody(true, true);
             }
 
         }
 
-        function hitSpike(player, spikes) {
+        function hitPlayer(player, spikes) {
             this.physics.pause();
             player.setTint(0xff0000);
-
             player.anims.play('stand');
-
             gameOver = true;
         }
     </script>
 
 </body>
 </html>
+
