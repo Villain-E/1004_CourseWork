@@ -30,7 +30,10 @@
         var game = new Phaser.Game(config);
         var titleText;
         var endText;
+        var spawnX = 40;
+        var spawnY = 490;
         var platforms;
+        var walls;
         var player;
         var goal;
         var spikes;
@@ -44,6 +47,7 @@
         function preload() {
             this.load.image('sky', 'assets/background.png');
             this.load.image('ground', 'assets/platform.png');
+            this.load.image('wall', 'assets/wall.png');
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
             this.load.image('fire', 'assets/Temp-fire.png');
@@ -55,6 +59,8 @@
             this.add.image(400, 300, 'sky');
 
             platforms = this.physics.add.staticGroup();
+
+            walls = this.physics.add.staticGroup();
 
             goal = this.physics.add.staticGroup();
 
@@ -104,6 +110,7 @@
             });
 
             this.physics.add.collider(player, platforms);
+            this.physics.add.collider(player, walls);
             this.physics.add.collider(fires, platforms);
             this.physics.add.collider(shurikens, platforms);
 
@@ -145,6 +152,11 @@
 
             if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-400);
+            }
+
+            if (cursors.down.isDown) { //Used to debug later levels without having to move through all previous ones.
+                stop = 0;
+                level += 1;
             }
 
             if (stop == 0) {
@@ -196,10 +208,33 @@
             else if (level == 7) {
                 var shuriken = shurikens.create(400, 480, 'shuriken');
                 shuriken.anims.play('s_Spin', true);
-                shuriken.setVelocityX(-400);
+                shuriken.setVelocityX(-550);
                 shuriken.setBounce(1);
                 shuriken.setCollideWorldBounds(true);
                 shuriken.body.setGravityY(-300);
+            }
+
+            else if (level == 8) {
+                spikes.create(380, 196, 'spikes');
+                spikes.create(420, 196, 'spikes');
+            }
+
+            else if (level == 9) {
+                var fire = fires.create(600, 280, 'fire');
+                fire.setVelocityY(500);
+                fire.setBounce(1);
+                fire.setCollideWorldBounds(true);
+                fire.body.setGravityY(-300);
+            }
+
+            else if (level == 10) {
+                platforms.create(-50, 350, 'ground');
+                goal.create(750, 512, 'flag');
+                spawnY = 300;
+            }
+
+            else if (level == 11) {
+                walls.create(166, 301, 'wall')
             }
         }
 
@@ -207,9 +242,9 @@
             stop = 0;
             level += 1;
             levelText.setText('Level: ' + level);
-            player.setY(490);
-            player.setX(40);
-            if (level == 1 || level == 4 || level == 6) {
+            player.setY(spawnY);
+            player.setX(spawnX);
+            if (level == 1 || level == 4 || level == 6 || level == 10) {
                 goal.disableBody(true, true);
             }
 
