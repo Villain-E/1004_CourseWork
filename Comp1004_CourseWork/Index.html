@@ -30,8 +30,10 @@
         var game = new Phaser.Game(config);
         var titleText;
         var endText;
+        var helpText;
         var spawnX = 40;
         var spawnY = 490;
+        var pSpeed = 160;
         var platforms;
         var walls;
         var player;
@@ -39,10 +41,15 @@
         var spikes;
         var fires;
         var shurikens;
+        var bullets
         var gameOver = false;
-        var stop = 0;
+        var gStop = false;
+        var stop = false;
         var level = 0;
         var levelText;
+        var pauseGame = false;
+        var bulletFired = false;
+        var cooldown = 800;
 
         function preload() {
             this.load.image('sky', 'assets/background.png');
@@ -51,6 +58,8 @@
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
             this.load.image('fire', 'assets/Temp-fire.png');
+            this.load.image('bulletR', 'assets/bulletR.png');
+            this.load.image('bulletL', 'assets/bulletL.png');
             this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
         }
@@ -69,6 +78,8 @@
             fires = this.physics.add.group();
 
             shurikens = this.physics.add.group();
+
+            bullets = this.physics.add.group();
 
             platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
@@ -123,50 +134,108 @@
             cursors = this.input.keyboard.createCursorKeys();
 
             levelText = this.add.text(8, 570, '', { fontSize: '24px', fill: '#FFF' });
+
+            this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+            this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+            this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+            this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
         }
 
         function update() {
 
-            if (gameOver) {
+            if (gameOver && !gStop) {
                 endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });
-                return;
+                helpText = this.add.text(250, 330, "Press 'R' to restart", { fontSize: '24px', fill: '#000' });
+                gStop = true;
             }
 
-            if (cursors.left.isDown) {
-                player.setVelocityX(-160);
+            if (cursors.left.isDown && !gameOver && !pauseGame) {
+                player.setVelocityX(-pSpeed);
 
                 player.anims.play('left', true);
             }
 
-            else if (cursors.right.isDown) {
-                player.setVelocityX(160);
+            else if (cursors.right.isDown && !gameOver && !pauseGame) {
+                player.setVelocityX(pSpeed);
 
                 player.anims.play('right', true);
             }
 
-            else {
+            else if (!pauseGame) {
                 player.setVelocityX(0);
 
                 player.anims.play('stand');
             }
 
-            if (cursors.up.isDown && player.body.touching.down) {
+            if (cursors.up.isDown && player.body.touching.down && !gameOver && !pauseGame) {
                 player.setVelocityY(-400);
             }
 
-            if (cursors.down.isDown) { //Used to debug later levels without having to move through all previous ones.
-                stop = 0;
+            if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame) {
                 level += 1;
+                stop = false;
             }
 
-            if (stop == 0) {
+
+            if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame) {
+                player.setY(spawnY);
+                player.setX(spawnX);
+                if (gameOver) {
+                    player.setTint(0xffffff);
+                    gameOver = false;
+                    this.physics.resume();
+                    endText.destroy();
+                    helpText.destroy();
+                    gStop = false;
+                }
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver) {
+                if (pauseGame == false) {
+                    helpText = this.add.text(180, 260, "The game is paused", { fontSize: '40px', fill: '#000' });
+                    this.physics.pause();
+                    pauseGame = true
+                }
+                else {
+                    this.physics.resume();
+                    helpText.destroy();
+                    pauseGame = false
+                }
+            }
+
+            if (cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+                var bullet = bullets.create(player.x + 20, player.y, 'bulletR');
+                bullet.setVelocityX(400);
+                bullet.body.setGravityY(-300);
+                bulletFired = true
+                this.time.delayedCall(cooldown, () => {
+                    bulletFired = false;
+                });
+            }
+
+            else if (cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+                var bullet = bullets.create(player.x - 20, player.y, 'bulletL');
+                bullet.setVelocityX(-400);
+                bullet.body.setGravityY(-300);
+                bulletFired = true
+                this.time.delayedCall(cooldown, () => {
+                    bulletFired = false;
+                });
+            }
+
+            bullets.getChildren().forEach(function (bullet) {
+                if (bullet.x < 0 || bullet.x > game.config.width - 0) {
+                    bullet.destroy();  // Destroy the bullet if it is off-screen
+                }
+            });
+
+            if (stop == false) {
                 setLevel();
             }
-
         }
 
         function setLevel() {
-            stop++;
+            stop = true;
 
             if (level == 1) {
                 platforms.create(700, 430, 'ground');
@@ -230,22 +299,26 @@
             else if (level == 10) {
                 platforms.create(-50, 350, 'ground');
                 goal.create(750, 512, 'flag');
-                spawnY = 300;
             }
 
             else if (level == 11) {
                 walls.create(166, 301, 'wall')
             }
+
+            else if (level == 12) {
+                
+            }
         }
 
         function reachGoal(player, goal) {
-            stop = 0;
+            stop = false;
             level += 1;
             levelText.setText('Level: ' + level);
+            if (level == 11) spawnY = 300;
             player.setY(spawnY);
             player.setX(spawnX);
             if (level == 1 || level == 4 || level == 6 || level == 10) {
-                goal.disableBody(true, true);
+                goal.destroy();
             }
 
         }
@@ -256,8 +329,17 @@
             player.anims.play('stand');
             gameOver = true;
         }
+
+        function clearGame() {
+            bullets.clear(true, true);
+            platforms.clear(true, true);
+            fires.clear(true, true);
+            shurikens.clear(true, true);
+            walls.clear(true, true);
+            spikes.clear(true, true);
+            goal.clear(true, true);
+        }
     </script>
 
 </body>
 </html>
-
