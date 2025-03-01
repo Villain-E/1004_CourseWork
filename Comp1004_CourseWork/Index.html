@@ -35,13 +35,12 @@
         var spawnY = 490;
         var pSpeed = 160;
         var platforms;
-        var walls;
         var player;
         var goal;
         var spikes;
-        var fires;
-        var shurikens;
-        var bullets
+        var projectile;
+        var bullets;
+        var crWalls;
         var gameOver = false;
         var gStop = false;
         var stop = false;
@@ -55,11 +54,13 @@
             this.load.image('sky', 'assets/background.png');
             this.load.image('ground', 'assets/platform.png');
             this.load.image('wall', 'assets/wall.png');
+            this.load.image('cracked_wall', 'assets/cracked_wall.png');
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
             this.load.image('fire', 'assets/Temp-fire.png');
             this.load.image('bulletR', 'assets/bulletR.png');
             this.load.image('bulletL', 'assets/bulletL.png');
+            this.load.image('lava', 'assets/lava.png');
             this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
         }
@@ -69,15 +70,15 @@
 
             platforms = this.physics.add.staticGroup();
 
-            walls = this.physics.add.staticGroup();
+            crWalls = this.physics.add.staticGroup();
 
             goal = this.physics.add.staticGroup();
 
+            lava = this.physics.add.staticGroup();
+
             spikes = this.physics.add.staticGroup();
 
-            fires = this.physics.add.group();
-
-            shurikens = this.physics.add.group();
+            projectile = this.physics.add.group();
 
             bullets = this.physics.add.group();
 
@@ -121,15 +122,17 @@
             });
 
             this.physics.add.collider(player, platforms);
-            this.physics.add.collider(player, walls);
-            this.physics.add.collider(fires, platforms);
-            this.physics.add.collider(shurikens, platforms);
+            this.physics.add.collider(player, crWalls);
+            this.physics.add.collider(projectile, platforms);
 
             this.physics.add.overlap(player, goal, reachGoal, null, this);
+            this.physics.add.overlap(bullets, crWalls, bulletHit, null, this);
+            this.physics.add.overlap(bullets, platforms, bulletDestroy, null, this);
+            this.physics.add.overlap(bullets, lava, bulletDestroy, null, this);
 
             this.physics.add.overlap(player, spikes, hitPlayer, null, this);
-            this.physics.add.overlap(player, fires, hitPlayer, null, this);
-            this.physics.add.overlap(player, shurikens, hitPlayer, null, this);
+            this.physics.add.overlap(player, projectile, hitPlayer, null, this);
+            this.physics.add.overlap(player, lava, hitPlayer, null, this);
 
             cursors = this.input.keyboard.createCursorKeys();
 
@@ -149,13 +152,13 @@
                 gStop = true;
             }
 
-            if (cursors.left.isDown && !gameOver && !pauseGame) {
+            if (cursors.left.isDown && !cursors.right.isDown && !gameOver && !pauseGame) {
                 player.setVelocityX(-pSpeed);
 
                 player.anims.play('left', true);
             }
 
-            else if (cursors.right.isDown && !gameOver && !pauseGame) {
+            else if (cursors.right.isDown && !cursors.left.isDown && !gameOver && !pauseGame) {
                 player.setVelocityX(pSpeed);
 
                 player.anims.play('right', true);
@@ -203,7 +206,7 @@
                 }
             }
 
-            if (cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+            if (cursors.right.isDown && !cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
                 var bullet = bullets.create(player.x + 20, player.y, 'bulletR');
                 bullet.setVelocityX(400);
                 bullet.body.setGravityY(-300);
@@ -213,7 +216,7 @@
                 });
             }
 
-            else if (cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+            else if (cursors.left.isDown && !cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
                 var bullet = bullets.create(player.x - 20, player.y, 'bulletL');
                 bullet.setVelocityX(-400);
                 bullet.body.setGravityY(-300);
@@ -238,7 +241,7 @@
             stop = true;
 
             if (level == 1) {
-                platforms.create(700, 430, 'ground');
+                platforms.create(705, 430, 'ground');
                 goal.create(750, 390, 'flag');
                 titleText.setText();
             }
@@ -257,7 +260,7 @@
             }
 
             else if (level == 5) {
-                var fire = fires.create(400, 180, 'fire');
+                var fire = projectile.create(400, 180, 'fire');
                 fire.setVelocityY(250);
                 fire.setBounce(1);
                 fire.setCollideWorldBounds(true);
@@ -266,7 +269,7 @@
 
             else if (level == 6) {
                 goal.create(40, 310, 'flag');
-                var shuriken = shurikens.create(100, 222, 'shuriken');
+                var shuriken = projectile.create(100, 222, 'shuriken');
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(250);
                 shuriken.setBounce(1);
@@ -275,7 +278,7 @@
             }
 
             else if (level == 7) {
-                var shuriken = shurikens.create(400, 480, 'shuriken');
+                var shuriken = projectile.create(400, 480, 'shuriken');
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(-550);
                 shuriken.setBounce(1);
@@ -289,7 +292,7 @@
             }
 
             else if (level == 9) {
-                var fire = fires.create(600, 280, 'fire');
+                var fire = projectile.create(600, 280, 'fire');
                 fire.setVelocityY(500);
                 fire.setBounce(1);
                 fire.setCollideWorldBounds(true);
@@ -297,16 +300,27 @@
             }
 
             else if (level == 10) {
+                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
+            }
+
+            else if (level == 11) {
                 platforms.create(-50, 350, 'ground');
                 goal.create(750, 512, 'flag');
             }
 
-            else if (level == 11) {
-                walls.create(166, 301, 'wall')
+            else if (level == 12) {
+                platforms.create(166, 301, 'wall')
             }
 
-            else if (level == 12) {
-                
+            else if (level == 13) {
+                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
+            }
+
+            else if (level == 14) {
+                var removed = platforms.getChildren().find(child => child.x === 850);
+                if (removed) removed.destroy();
+                lava.create(850, 300, 'lava');
+                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
             }
         }
 
@@ -314,28 +328,35 @@
             stop = false;
             level += 1;
             levelText.setText('Level: ' + level);
-            if (level == 11) spawnY = 300;
+            if (level == 12) spawnY = 300;
             player.setY(spawnY);
             player.setX(spawnX);
-            if (level == 1 || level == 4 || level == 6 || level == 10) {
+            if (level == 1 || level == 4 || level == 6 || level == 11) {
                 goal.destroy();
             }
 
         }
 
-        function hitPlayer(player, spikes) {
+        function hitPlayer(player) {
             this.physics.pause();
             player.setTint(0xff0000);
             player.anims.play('stand');
             gameOver = true;
         }
 
+        function bulletHit(bullet, thing) {
+            bullet.destroy();
+            thing.destroy();
+        }
+
+        function bulletDestroy(bullet) {
+            bullet.destroy();
+        }
+
         function clearGame() {
             bullets.clear(true, true);
             platforms.clear(true, true);
-            fires.clear(true, true);
-            shurikens.clear(true, true);
-            walls.clear(true, true);
+            projectile.clear(true, true);
             spikes.clear(true, true);
             goal.clear(true, true);
         }
