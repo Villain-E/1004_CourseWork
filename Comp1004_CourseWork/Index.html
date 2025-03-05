@@ -32,13 +32,14 @@
         var endText;
         var helpText;
         var spawnX = 40;
-        var spawnY = 490;
+        var spawnY = 498;
         var pSpeed = 160;
         var platforms;
         var player;
         var goal;
         var spikes;
         var projectile;
+        var laser;
         var bullets;
         var crWalls;
         var gameOver = false;
@@ -58,6 +59,7 @@
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
             this.load.image('fire', 'assets/Temp-fire.png');
+            this.load.image('laser', 'assets/laser.png');
             this.load.image('bulletR', 'assets/bulletR.png');
             this.load.image('bulletL', 'assets/bulletL.png');
             this.load.image('lava', 'assets/lava.png');
@@ -79,6 +81,8 @@
             spikes = this.physics.add.staticGroup();
 
             projectile = this.physics.add.group();
+
+            laser = this.physics.add.group();
 
             bullets = this.physics.add.group();
 
@@ -132,11 +136,13 @@
 
             this.physics.add.overlap(player, spikes, hitPlayer, null, this);
             this.physics.add.overlap(player, projectile, hitPlayer, null, this);
+            this.physics.add.overlap(player, laser, hitPlayer, null, this);
             this.physics.add.overlap(player, lava, hitPlayer, null, this);
 
             cursors = this.input.keyboard.createCursorKeys();
 
-            levelText = this.add.text(8, 570, '', { fontSize: '24px', fill: '#FFF' });
+            levelText = this.add.text(8, 537, '', { fontSize: '24px', fill: '#FFF' });
+            levelName = this.add.text(8, 570, '', { fontSize: '24px', fill: '#FFF' });
 
             this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
             this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -147,6 +153,9 @@
         function update() {
 
             if (gameOver && !gStop) {
+                projectile.getChildren().forEach(function (projectile) {
+                    projectile.anims.pause();
+                });
                 endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });
                 helpText = this.add.text(250, 330, "Press 'R' to restart", { fontSize: '24px', fill: '#000' });
                 gStop = true;
@@ -175,8 +184,8 @@
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame) {
-                level += 1;
                 stop = false;
+                level += 1;
             }
 
 
@@ -190,17 +199,28 @@
                     endText.destroy();
                     helpText.destroy();
                     gStop = false;
+                    projectile.getChildren().forEach(function (projectile) {
+                        projectile.anims.resume();
+                    });
                 }
+                if (level == 15) laser.setX(-10);
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver) {
                 if (pauseGame == false) {
                     helpText = this.add.text(180, 260, "The game is paused", { fontSize: '40px', fill: '#000' });
                     this.physics.pause();
+                    player.anims.pause();
+                    projectile.getChildren().forEach(function (projectile) {
+                        projectile.anims.pause();
+                    });
                     pauseGame = true
                 }
                 else {
                     this.physics.resume();
+                    projectile.getChildren().forEach(function (projectile) {
+                        projectile.anims.resume();
+                    });
                     helpText.destroy();
                     pauseGame = false
                 }
@@ -227,8 +247,14 @@
             }
 
             bullets.getChildren().forEach(function (bullet) {
-                if (bullet.x < 0 || bullet.x > game.config.width - 0) {
-                    bullet.destroy();  // Destroy the bullet if it is off-screen
+                if (bullet.x < 0 || bullet.x > game.config.width) {
+                    bullet.destroy();  //Destroy the bullet if it is off-screen
+                }
+            });
+
+            laser.getChildren().forEach(function (laser) {
+                if (laser.x > game.config.width + 10) {
+                    laser.destroy();  //Destroy the laser if it is off-screen
                 }
             });
 
@@ -243,20 +269,23 @@
             if (level == 1) {
                 platforms.create(705, 430, 'ground');
                 goal.create(750, 390, 'flag');
-                titleText.setText();
+                levelName.setText("The Basics");
             }
 
             else if (level == 2) {
                 spikes.create(600, 406, 'spikes');
+                levelName.setText("Danger!");
             }
 
             else if (level == 3) {
                 platforms.create(850, 300, 'ground');
+                levelName.setText("Alcove");
             }
 
             else if (level == 4) {
                 platforms.create(350, 220, 'ground');
                 goal.create(260, 180, 'flag');
+                levelName.setText("A New Goal");
             }
 
             else if (level == 5) {
@@ -265,30 +294,36 @@
                 fire.setBounce(1);
                 fire.setCollideWorldBounds(true);
                 fire.body.setGravityY(-300);
+                levelName.setText("Fireball!");
             }
 
             else if (level == 6) {
                 goal.create(40, 310, 'flag');
                 var shuriken = projectile.create(100, 222, 'shuriken');
+                shuriken.myVariableName = 'shuriken'
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(250);
                 shuriken.setBounce(1);
                 shuriken.setCollideWorldBounds(true);
                 shuriken.body.setGravityY(-300);
+                levelName.setText("The Drop Off Point");
             }
 
             else if (level == 7) {
                 var shuriken = projectile.create(400, 480, 'shuriken');
+                shuriken.myVariableName = 'shuriken'
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(-550);
                 shuriken.setBounce(1);
                 shuriken.setCollideWorldBounds(true);
                 shuriken.body.setGravityY(-300);
+                levelName.setText("JUMP!");
             }
 
             else if (level == 8) {
                 spikes.create(380, 196, 'spikes');
                 spikes.create(420, 196, 'spikes');
+                levelName.setText("Ever Growing Danger");
             }
 
             else if (level == 9) {
@@ -297,34 +332,53 @@
                 fire.setBounce(1);
                 fire.setCollideWorldBounds(true);
                 fire.body.setGravityY(-300);
+                levelName.setText("Crowded");
             }
 
             else if (level == 10) {
-                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
+                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();
+                levelName.setText("Empty Space");
             }
 
             else if (level == 11) {
                 platforms.create(-50, 350, 'ground');
                 goal.create(750, 512, 'flag');
+                levelName.setText("Detour");
             }
 
             else if (level == 12) {
-                platforms.create(166, 301, 'wall')
+                platforms.create(166, 301, 'wall');
+                levelName.setText("Trapped");
             }
 
             else if (level == 13) {
-                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
+                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();
+                levelName.setText("It's Back!");
             }
 
             else if (level == 14) {
                 var removed = platforms.getChildren().find(child => child.x === 850);
                 if (removed) removed.destroy();
                 lava.create(850, 300, 'lava');
-                crWalls.create(527.5, 327, 'cracked_wall').setScale(1.4).refreshBody();
+                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();
+                levelName.setText("Danger Floor");
+            }
+
+            else if (level == 15) {
+                var beam = laser.create(-10, 300, 'laser');
+                beam.setVelocityX(45);
+                beam.setCollideWorldBounds(false);
+                beam.body.setGravityY(-300);
+                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();
+                levelName.setText("The Grand Finale");
+            }
+
+            else if (level == 16) {
+                clearGame();
             }
         }
 
-        function reachGoal(player, goal) {
+        function reachGoal(player) {
             stop = false;
             level += 1;
             levelText.setText('Level: ' + level);
@@ -332,7 +386,7 @@
             player.setY(spawnY);
             player.setX(spawnX);
             if (level == 1 || level == 4 || level == 6 || level == 11) {
-                goal.destroy();
+                goal.clear(true, true);
             }
 
         }
@@ -356,9 +410,14 @@
         function clearGame() {
             bullets.clear(true, true);
             platforms.clear(true, true);
+            lava.clear(true, true);
+            crWalls.clear(true, true);
             projectile.clear(true, true);
             spikes.clear(true, true);
             goal.clear(true, true);
+            laser.clear(true, true);
+            levelText.destroy();
+            levelName.destroy();
         }
     </script>
 
