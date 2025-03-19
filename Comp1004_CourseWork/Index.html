@@ -40,6 +40,7 @@
         var spikes;
         var projectile;
         var laser;
+        var enemies;
         var bullets;
         var crWalls;
         var gameOver = false;
@@ -59,12 +60,13 @@
             this.load.image('flag', 'assets/flag.png');
             this.load.image('spikes', 'assets/spike.png');
             this.load.image('fire', 'assets/Temp-fire.png');
-            this.load.image('laser', 'assets/laser.png');
+            this.load.image('laser', 'assets/beam.png');
             this.load.image('bulletR', 'assets/bulletR.png');
             this.load.image('bulletL', 'assets/bulletL.png');
             this.load.image('lava', 'assets/lava.png');
             this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
+            this.load.spritesheet('wisp', 'assets/blue_wisp.png', { frameWidth: 30, frameHeight: 40 });
         }
 
         function create() {
@@ -83,6 +85,8 @@
             projectile = this.physics.add.group();
 
             laser = this.physics.add.group();
+
+            enemies = this.physics.add.group();
 
             bullets = this.physics.add.group();
 
@@ -125,6 +129,13 @@
                 repeat: -1
             });
 
+            this.anims.create({
+                key: 'Flame',
+                frames: this.anims.generateFrameNumbers('wisp', { start: 0, end: 3 }),
+                frameRate: 8,
+                repeat: -1
+            });
+
             this.physics.add.collider(player, platforms);
             this.physics.add.collider(player, crWalls);
             this.physics.add.collider(projectile, platforms);
@@ -138,6 +149,7 @@
             this.physics.add.overlap(player, projectile, hitPlayer, null, this);
             this.physics.add.overlap(player, laser, hitPlayer, null, this);
             this.physics.add.overlap(player, lava, hitPlayer, null, this);
+            this.physics.add.overlap(player, enemies, hitPlayer, null, this);
 
             cursors = this.input.keyboard.createCursorKeys();
 
@@ -155,6 +167,9 @@
             if (gameOver && !gStop) {
                 projectile.getChildren().forEach(function (projectile) {
                     projectile.anims.pause();
+                });
+                enemies.getChildren().forEach(function (enemy) {
+                    enemy.anims.pause();
                 });
                 endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });
                 helpText = this.add.text(250, 330, "Press 'R' to restart", { fontSize: '24px', fill: '#000' });
@@ -192,6 +207,12 @@
             if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame) {
                 player.setY(spawnY);
                 player.setX(spawnX);
+                projectile.getChildren().forEach(function (projectile) {
+                    if (projectile.x <= 75 && projectile.y == 480 && level < 11) {
+                        projectile.setX(400)
+                        projectile.setVelocityX(-550)
+                    }
+                });
                 if (gameOver) {
                     player.setTint(0xffffff);
                     gameOver = false;
@@ -202,8 +223,14 @@
                     projectile.getChildren().forEach(function (projectile) {
                         projectile.anims.resume();
                     });
+                    enemies.getChildren().forEach(function (enemy) {
+                        enemy.anims.resume();
+                    });
                 }
-                if (level == 15) laser.setX(-10);
+                laser.setX(-10);
+                enemies.setX(400);
+                enemies.setY(400);
+                player.setVelocityY(100);
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver) {
@@ -214,12 +241,18 @@
                     projectile.getChildren().forEach(function (projectile) {
                         projectile.anims.pause();
                     });
+                    enemies.getChildren().forEach(function (enemy) {
+                        enemy.anims.pause();
+                    });
                     pauseGame = true
                 }
                 else {
                     this.physics.resume();
                     projectile.getChildren().forEach(function (projectile) {
                         projectile.anims.resume();
+                    });
+                    enemies.getChildren().forEach(function (enemy) {
+                        enemy.anims.resume();
                     });
                     helpText.destroy();
                     pauseGame = false
@@ -255,6 +288,27 @@
             laser.getChildren().forEach(function (laser) {
                 if (laser.x > game.config.width + 10) {
                     laser.destroy();  //Destroy the laser if it is off-screen
+                }
+            });
+
+            enemies.getChildren().forEach(function (enemy) {
+                if (enemy.x > player.x + 1) {
+                    enemy.setVelocityX(-50);
+                }
+                else if (enemy.x < player.x - 1) {
+                    enemy.setVelocityX(50);
+                }
+                else if (enemy.x = player.x) {
+                    enemy.setVelocityX(0);
+                }
+                if (enemy.y > player.y + 1) {
+                    enemy.setVelocityY(-50);
+                }
+                else if (enemy.y < player.y - 1) {
+                    enemy.setVelocityY(50);
+                }
+                else if (enemy.y = player.y) {
+                    enemy.setVelocityY(0);
                 }
             });
 
@@ -300,7 +354,6 @@
             else if (level == 6) {
                 goal.create(40, 310, 'flag');
                 var shuriken = projectile.create(100, 222, 'shuriken');
-                shuriken.myVariableName = 'shuriken'
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(250);
                 shuriken.setBounce(1);
@@ -311,7 +364,6 @@
 
             else if (level == 7) {
                 var shuriken = projectile.create(400, 480, 'shuriken');
-                shuriken.myVariableName = 'shuriken'
                 shuriken.anims.play('s_Spin', true);
                 shuriken.setVelocityX(-550);
                 shuriken.setBounce(1);
@@ -365,6 +417,15 @@
             }
 
             else if (level == 15) {
+                var wisp = enemies.create(400, 400, 'wisp');
+                wisp.body.setGravityY(-300);
+                wisp.anims.play('Flame', true);
+                levelName.setText("A New Challenger Approaches");
+            }
+
+            else if (level == 16) {
+                enemies.setX(400);
+                enemies.setY(400);
                 var beam = laser.create(-10, 300, 'laser');
                 beam.setVelocityX(45);
                 beam.setCollideWorldBounds(false);
@@ -373,7 +434,7 @@
                 levelName.setText("The Grand Finale");
             }
 
-            else if (level == 16) {
+            else if (level == 17) {
                 clearGame();
             }
         }
@@ -416,6 +477,7 @@
             spikes.clear(true, true);
             goal.clear(true, true);
             laser.clear(true, true);
+            enemies.clear(true, true);
             levelText.destroy();
             levelName.destroy();
         }
