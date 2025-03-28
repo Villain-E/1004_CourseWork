@@ -43,6 +43,7 @@
         var enemies;
         var bullets;
         var crWalls;
+        var endGame = false;
         var gameOver = false;
         var gStop = false;
         var stop = false;
@@ -64,6 +65,8 @@
             this.load.image('bulletR', 'assets/bulletR.png');
             this.load.image('bulletL', 'assets/bulletL.png');
             this.load.image('lava', 'assets/lava.png');
+            this.load.image('closedChest', 'assets/Chest.png');
+            this.load.image('openedChest', 'assets/Chest_opened.png');
             this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
             this.load.spritesheet('wisp', 'assets/blue_wisp.png', { frameWidth: 30, frameHeight: 40 });
@@ -77,6 +80,8 @@
             crWalls = this.physics.add.staticGroup();
 
             goal = this.physics.add.staticGroup();
+
+            end = this.physics.add.staticGroup();
 
             lava = this.physics.add.staticGroup();
 
@@ -141,6 +146,7 @@
             this.physics.add.collider(projectile, platforms);
 
             this.physics.add.overlap(player, goal, reachGoal, null, this);
+            this.physics.add.overlap(player, end, ending, null, this);
             this.physics.add.overlap(bullets, crWalls, bulletHit, null, this);
             this.physics.add.overlap(bullets, platforms, bulletDestroy, null, this);
             this.physics.add.overlap(bullets, lava, bulletDestroy, null, this);
@@ -164,7 +170,7 @@
 
         function update() {
 
-            if (gameOver && !gStop) {
+            if (gameOver && !gStop && !endGame) {
                 projectile.getChildren().forEach(function (projectile) {
                     projectile.anims.pause();
                 });
@@ -176,39 +182,39 @@
                 gStop = true;
             }
 
-            if (cursors.left.isDown && !cursors.right.isDown && !gameOver && !pauseGame) {
+            if (cursors.left.isDown && !cursors.right.isDown && !gameOver && !pauseGame && !endGame) {
                 player.setVelocityX(-pSpeed);
 
                 player.anims.play('left', true);
             }
 
-            else if (cursors.right.isDown && !cursors.left.isDown && !gameOver && !pauseGame) {
+            else if (cursors.right.isDown && !cursors.left.isDown && !gameOver && !pauseGame && !endGame) {
                 player.setVelocityX(pSpeed);
 
                 player.anims.play('right', true);
             }
 
-            else if (!pauseGame) {
+            else if (!pauseGame && !endGame) {
                 player.setVelocityX(0);
 
                 player.anims.play('stand');
             }
 
-            if (cursors.up.isDown && player.body.touching.down && !gameOver && !pauseGame) {
+            if (cursors.up.isDown && player.body.touching.down && !gameOver && !pauseGame && !endGame) {
                 player.setVelocityY(-400);
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame) {
+            if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame && !endGame) { //Used to skip through the levels for convenience
                 stop = false;
                 level += 1;
             }
 
 
-            if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame) {
+            if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame && !endGame) {
                 player.setY(spawnY);
                 player.setX(spawnX);
                 projectile.getChildren().forEach(function (projectile) {
-                    if (projectile.x <= 75 && projectile.y == 480 && level < 11) {
+                    if (projectile.x <= 75 && projectile.y == 480 && level < 12) {
                         projectile.setX(400)
                         projectile.setVelocityX(-550)
                     }
@@ -233,7 +239,7 @@
                 player.setVelocityY(100);
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver) {
+            if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver && !endGame) {
                 if (pauseGame == false) {
                     helpText = this.add.text(180, 260, "The game is paused", { fontSize: '40px', fill: '#000' });
                     this.physics.pause();
@@ -259,7 +265,7 @@
                 }
             }
 
-            if (cursors.right.isDown && !cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+            if (cursors.right.isDown && !cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {
                 var bullet = bullets.create(player.x + 20, player.y, 'bulletR');
                 bullet.setVelocityX(400);
                 bullet.body.setGravityY(-300);
@@ -269,7 +275,7 @@
                 });
             }
 
-            else if (cursors.left.isDown && !cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired) {
+            else if (cursors.left.isDown && !cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {
                 var bullet = bullets.create(player.x - 20, player.y, 'bulletL');
                 bullet.setVelocityX(-400);
                 bullet.body.setGravityY(-300);
@@ -319,6 +325,15 @@
 
         function setLevel() {
             stop = true;
+
+            if (level == 1 || level == 4 || level == 6 || level == 11) {
+                goal.clear(true, true);
+            }
+
+            if (level == 12) spawnY = 300;
+            if (level == 17) spawnY = 498;
+            player.setY(spawnY);
+            player.setX(spawnX);
 
             if (level == 1) {
                 platforms.create(705, 430, 'ground');
@@ -436,6 +451,8 @@
 
             else if (level == 17) {
                 clearGame();
+                platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+                end.create(500, 505, 'closedChest');
             }
         }
 
@@ -443,13 +460,15 @@
             stop = false;
             level += 1;
             levelText.setText('Level: ' + level);
-            if (level == 12) spawnY = 300;
-            player.setY(spawnY);
-            player.setX(spawnX);
-            if (level == 1 || level == 4 || level == 6 || level == 11) {
-                goal.clear(true, true);
-            }
+        }
 
+        function ending() {
+            end.clear(true, true);
+            this.add.image(500, 505, 'openedChest');
+            this.physics.pause();
+            player.anims.pause();
+            endGame = true;
+            endText = this.add.text(230, 270, "You WIN!", { fontSize: '60px', fill: '#000' });
         }
 
         function hitPlayer(player) {
