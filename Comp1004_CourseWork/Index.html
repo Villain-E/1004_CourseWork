@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Comp1004_CourseWork_Test</title>
+    <link rel="stylesheet" href="Style.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
 </head>
 <body>
@@ -43,6 +44,8 @@
         var enemies;
         var bullets;
         var crWalls;
+        var loading = false;
+        window.reset = false;
         var endGame = false;
         var gameOver = false;
         var gStop = false;
@@ -166,6 +169,8 @@
             this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
             this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
             this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+
+            while (level <= localStorage.getItem('level')) loading = true, setLevel();
         }
 
         function update() {
@@ -205,8 +210,7 @@
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame && !endGame) { //Used to skip through the levels for convenience
-                stop = false;
-                level += 1;
+                setLevel();
             }
 
 
@@ -321,10 +325,21 @@
             if (stop == false) {
                 setLevel();
             }
+
+            if (window.reset == true) {
+                resetGame();
+            }
         }
 
         function setLevel() {
+
+            if (level != 0) levelText.setText('Level: ' + level);
+
             stop = true;
+
+            if (loading != true) localStorage.setItem('level', level);
+
+            loading = false;
 
             if (level == 1 || level == 4 || level == 6 || level == 11) {
                 goal.clear(true, true);
@@ -454,12 +469,12 @@
                 platforms.create(400, 568, 'ground').setScale(2).refreshBody();
                 end.create(500, 505, 'closedChest');
             }
+
+            level += 1;
         }
 
         function reachGoal(player) {
             stop = false;
-            level += 1;
-            levelText.setText('Level: ' + level);
         }
 
         function ending() {
@@ -497,10 +512,63 @@
             goal.clear(true, true);
             laser.clear(true, true);
             enemies.clear(true, true);
-            levelText.destroy();
-            levelName.destroy();
+            end.clear(true, true);
         }
+
+        function resetGame() {
+            clearGame();
+            level = 1;
+            spawnX = 40;
+            spawnY = 498;
+            player.setX(spawnX)
+            player.setVelocityY(0)
+            player.setY(spawnY)
+            window.reset = false;
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            goal.create(750, 512, 'flag');
+            levelName.setDepth(10);
+            levelName.setText(' ');
+            levelText.setDepth(10);
+            levelText.setText(' ');
+            localStorage.setItem('level', 0);
+        }
+
+    </script>
+
+    <button id="themeToggle">Toggle Dark/Light Mode</button>
+    <button id="resetButton">Reset Progress</button>
+
+    <p>This is Iridia's Journey! This is a simple platformer about a fairy trapped in a timeloop of sorts. Everytime she reaches the goal, <br>she is reset, with the world around her shifting as time itself tries to prevent her from continuing. One new item is added <br>everytime the goal is reached, with all other objects remaining as they were. <br><br>Move with the arrow keys, jump with up, reset the stage with 'r', shoot bullets with the spacebar while moving.</p>
+
+    <script>
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+        const ThemeToggleButton = document.getElementById('themeToggle');
+        ThemeToggleButton.addEventListener('click', function () {
+            // Toggle the dark mode class
+            document.body.classList.toggle('dark-mode');
+            // Save the user's theme preference to localStorage
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+            }
+            else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+    </script>
+
+    <script>
+
+        const ResetButton = document.getElementById('resetButton');
+        ResetButton.addEventListener('click', function () {
+            window.reset = true
+        });
+
     </script>
 
 </body>
 </html>
+
