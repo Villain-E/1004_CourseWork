@@ -1,0 +1,19 @@
+body {
+    background-color: #fff;
+    color: #333;
+}
+
+button {
+    background-color: lightgray;
+    color: black;
+}
+
+body.dark-mode {
+    background-color: #222;
+    color: #fff;
+}
+
+body.dark-mode button {
+    background-color: #555;
+    color: #fff;
+}
