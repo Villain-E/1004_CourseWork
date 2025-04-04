@@ -28,6 +28,7 @@
             }
         };
 
+        //List of variables
         var game = new Phaser.Game(config);
         var titleText;
         var endText;
@@ -45,7 +46,7 @@
         var bullets;
         var crWalls;
         var loading = false;
-        window.reset = false;
+        window.reset = false; //Can be used in other scripts
         var endGame = false;
         var gameOver = false;
         var gStop = false;
@@ -56,7 +57,7 @@
         var bulletFired = false;
         var cooldown = 800;
 
-        function preload() {
+        function preload() { //Loads all images used in code
             this.load.image('sky', 'assets/background.png');
             this.load.image('ground', 'assets/platform.png');
             this.load.image('wall', 'assets/wall.png');
@@ -70,14 +71,15 @@
             this.load.image('lava', 'assets/lava.png');
             this.load.image('closedChest', 'assets/Chest.png');
             this.load.image('openedChest', 'assets/Chest_opened.png');
-            this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });
+            this.load.spritesheet('shuriken', 'assets/Shuriken_spin.png', { frameWidth: 20, frameHeight: 19 });  //Sprite sheet that will be loaded, including sprite sizes
             this.load.spritesheet('Iridia', 'assets/Iridia_Ssheet.png', { frameWidth: 54, frameHeight: 80 });
             this.load.spritesheet('wisp', 'assets/blue_wisp.png', { frameWidth: 30, frameHeight: 40 });
         }
 
         function create() {
-            this.add.image(400, 300, 'sky');
-
+            this.add.image(400, 300, 'sky');  //Spawns a sky object in the scene
+            
+            //Defining variables for objects
             platforms = this.physics.add.staticGroup();
 
             crWalls = this.physics.add.staticGroup();
@@ -98,18 +100,20 @@
 
             bullets = this.physics.add.group();
 
-            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();  //Creates a platform at a point at double size, refreshes the hit box to fit the new scale
 
-            goal.create(750, 512, 'flag');
+            goal.create(750, 512, 'flag');  //Creates goal at given point
 
-            titleText = this.add.text(210, 20, "Iridia's Journey", { fontSize: '40px', fill: '#FFF' });
+            titleText = this.add.text(210, 20, "Iridia's Journey", { fontSize: '40px', fill: '#FFF' });  //Creates title text
 
-            player = this.physics.add.sprite(40, 490, 'Iridia').setScale(0.8).refreshBody();
+            player = this.physics.add.sprite(40, 490, 'Iridia').setScale(0.8).refreshBody();  //Creates player
 
+            //Defines values for the player object
             player.setBounce(0.1);
             player.setCollideWorldBounds(true);
             player.body.setGravityY(300)
 
+            //Animations are created using the player, shuriken, and wisp sprite sheets
             this.anims.create({
                 key: 'left',
                 frames: this.anims.generateFrameNumbers('Iridia', { start: 0, end: 3 }),
@@ -144,143 +148,148 @@
                 repeat: -1
             });
 
+            //Adds colliders for the player and projectiles
             this.physics.add.collider(player, platforms);
             this.physics.add.collider(player, crWalls);
             this.physics.add.collider(projectile, platforms);
 
+            //Causes functions to be ran when certain objects overlap with eachother
             this.physics.add.overlap(player, goal, reachGoal, null, this);
             this.physics.add.overlap(player, end, ending, null, this);
             this.physics.add.overlap(bullets, crWalls, bulletHit, null, this);
             this.physics.add.overlap(bullets, platforms, bulletDestroy, null, this);
             this.physics.add.overlap(bullets, lava, bulletDestroy, null, this);
 
+            //Kills the player when they overlap with danger
             this.physics.add.overlap(player, spikes, hitPlayer, null, this);
             this.physics.add.overlap(player, projectile, hitPlayer, null, this);
             this.physics.add.overlap(player, laser, hitPlayer, null, this);
             this.physics.add.overlap(player, lava, hitPlayer, null, this);
             this.physics.add.overlap(player, enemies, hitPlayer, null, this);
 
-            cursors = this.input.keyboard.createCursorKeys();
+            cursors = this.input.keyboard.createCursorKeys();  //Allows key presses
 
             levelText = this.add.text(8, 537, '', { fontSize: '24px', fill: '#FFF' });
             levelName = this.add.text(8, 570, '', { fontSize: '24px', fill: '#FFF' });
 
+            //Defines which keys do things when they are pressed
             this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
             this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
             this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
             this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
 
-            while (level <= localStorage.getItem('level')) loading = true, setLevel();
+            while (level <= localStorage.getItem('level')) loading = true, setLevel();  //Loads any saved level data when opening website
         }
 
-        function update() {
+        function update() {  //Updates every tick
 
             if (gameOver && !gStop && !endGame) {
-                projectile.getChildren().forEach(function (projectile) {
+                projectile.getChildren().forEach(function (projectile) {  //For every projectile, pauses its animation
                     projectile.anims.pause();
                 });
-                enemies.getChildren().forEach(function (enemy) {
+                enemies.getChildren().forEach(function (enemy) {  //For every enemy, pauses its animation
                     enemy.anims.pause();
                 });
-                endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });
-                helpText = this.add.text(250, 330, "Press 'R' to restart", { fontSize: '24px', fill: '#000' });
+                endText = this.add.text(230, 270, "Game Over", { fontSize: '60px', fill: '#000' });  //Text telling the player 'game over'
+                helpText = this.add.text(250, 330, "Press 'R' to restart", { fontSize: '24px', fill: '#000' });  //Text telling the player how to restart
                 gStop = true;
             }
 
-            if (cursors.left.isDown && !cursors.right.isDown && !gameOver && !pauseGame && !endGame) {
+            if (cursors.left.isDown && !cursors.right.isDown && !gameOver && !pauseGame && !endGame) {  //Moves the player left when the left key is pressed and game isn't over/paused
                 player.setVelocityX(-pSpeed);
 
-                player.anims.play('left', true);
+                player.anims.play('left', true);  //Plays animation 'left' created earlier
             }
 
-            else if (cursors.right.isDown && !cursors.left.isDown && !gameOver && !pauseGame && !endGame) {
+            else if (cursors.right.isDown && !cursors.left.isDown && !gameOver && !pauseGame && !endGame) {  //Moves the player right when the right key is pressed and game isn't over/paused
                 player.setVelocityX(pSpeed);
 
-                player.anims.play('right', true);
+                player.anims.play('right', true);  //Plays animation 'right' created earlier
             }
 
-            else if (!pauseGame && !endGame) {
+            else if (!pauseGame && !endGame) {  //Player stands still when neither direction pressed and game isn't over/paused
                 player.setVelocityX(0);
 
-                player.anims.play('stand');
+                player.anims.play('stand');  //Plays animation 'stand' created earlier
             }
 
-            if (cursors.up.isDown && player.body.touching.down && !gameOver && !pauseGame && !endGame) {
+            if (cursors.up.isDown && player.body.touching.down && !gameOver && !pauseGame && !endGame) {  //Makes the player jump when the up key is pressed and game isn't over/paused
                 player.setVelocityY(-400);
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame && !endGame) { //Used to skip through the levels for convenience
+            if (Phaser.Input.Keyboard.JustDown(this.sKey) && !pauseGame && !endGame) {  //Used to skip through the levels for convenience of testing and showcasing (not intended for the average player)
                 setLevel();
             }
 
 
-            if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame && !endGame) {
+            if (Phaser.Input.Keyboard.JustDown(this.rKey) && !pauseGame && !endGame) {  //Resets the players position to spawn position when the 'r' key is pressed
                 player.setY(spawnY);
                 player.setX(spawnX);
-                projectile.getChildren().forEach(function (projectile) {
-                    if (projectile.x <= 75 && projectile.y == 480 && level < 13) {
+                projectile.getChildren().forEach(function (projectile) {  //Prevents a projectile from killing the player as they spawn
+                    if (projectile.x <= 75 && projectile.y == 480 && level < 13) {  //Only for first 11 levels as player spawn moves after and issue is fixed
                         projectile.setX(400)
                         projectile.setVelocityX(-550)
                     }
                 });
-                if (gameOver) {
-                    player.setTint(0xffffff);
+                if (gameOver) {  //Defines what happens when the player resets after being killed
+                    player.setTint(0xffffff);  //Resets to normal tint
                     gameOver = false;
-                    this.physics.resume();
+                    this.physics.resume();  //Unpauses physics
                     endText.destroy();
                     helpText.destroy();
                     gStop = false;
-                    projectile.getChildren().forEach(function (projectile) {
+                    projectile.getChildren().forEach(function (projectile) {  //For each projectile, unpauses animation
                         projectile.anims.resume();
                     });
-                    enemies.getChildren().forEach(function (enemy) {
+                    enemies.getChildren().forEach(function (enemy) {  //For each enemy, unpauses animation
                         enemy.anims.resume();
                     });
                 }
+                //Resets laser and enemy position
                 laser.setX(-10);
                 enemies.setX(400);
                 enemies.setY(400);
-                player.setVelocityY(100);
+                player.setVelocityY(100);  //Starts player moving downwards after reset
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver && !endGame) {
-                if (pauseGame == false) {
-                    helpText = this.add.text(180, 260, "The game is paused", { fontSize: '40px', fill: '#000' });
-                    this.physics.pause();
-                    player.anims.pause();
-                    projectile.getChildren().forEach(function (projectile) {
+            if (Phaser.Input.Keyboard.JustDown(this.pKey) && !gameOver && !endGame) {  //Pauses the game when the player presses the 'p' key
+                if (pauseGame == false) {  //If the game isn't already paused, pauses the game
+                    helpText = this.add.text(180, 260, "The game is paused", { fontSize: '40px', fill: '#000' });  //Help text
+                    this.physics.pause();  //Pauses physics
+                    player.anims.pause();  //Pauses player animations
+                    projectile.getChildren().forEach(function (projectile) {  //For each projectile, pauses animation
                         projectile.anims.pause();
                     });
-                    enemies.getChildren().forEach(function (enemy) {
+                    enemies.getChildren().forEach(function (enemy) {  //For each enemy, pauses animation
                         enemy.anims.pause();
                     });
-                    pauseGame = true
+                    pauseGame = true  //Sets pause game to true
                 }
-                else {
-                    this.physics.resume();
-                    projectile.getChildren().forEach(function (projectile) {
+                else {  //If the game is already paused, unpauses the game
+                    this.physics.resume();  //Resumes physics
+                    projectile.getChildren().forEach(function (projectile) {  //For each projectile, unpauses animation
                         projectile.anims.resume();
                     });
-                    enemies.getChildren().forEach(function (enemy) {
+                    enemies.getChildren().forEach(function (enemy) {  //For each enemy, unpauses animation
                         enemy.anims.resume();
                     });
-                    helpText.destroy();
-                    pauseGame = false
+                    helpText.destroy();  //Removes help text
+                    pauseGame = false  //Sets pause game to false
                 }
             }
 
-            if (cursors.right.isDown && !cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {
-                var bullet = bullets.create(player.x + 20, player.y, 'bulletR');
+            if (cursors.right.isDown && !cursors.left.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {  //When right is held and space bar is pushed when game isn't over/paused, fires bullet right
+                var bullet = bullets.create(player.x + 20, player.y, 'bulletR');  //Creates bullet objects moving right
                 bullet.setVelocityX(400);
-                bullet.body.setGravityY(-300);
+                bullet.body.setGravityY(-300);  //Sets gravity so bullet doesn't fall down
                 bulletFired = true
-                this.time.delayedCall(cooldown, () => {
+                this.time.delayedCall(cooldown, () => {  //Makes it so shooting bullets has a cooldown
                     bulletFired = false;
                 });
             }
 
-            else if (cursors.left.isDown && !cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {
-                var bullet = bullets.create(player.x - 20, player.y, 'bulletL');
+            else if (cursors.left.isDown && !cursors.right.isDown && Phaser.Input.Keyboard.JustDown(this.spacebar) && !gameOver && !pauseGame && !bulletFired && !endGame) {  //When left is held and space bar is pushed when game isn't over/paused, fires bullet left
+                var bullet = bullets.create(player.x - 20, player.y, 'bulletL'); //Creates bullet objects moving left
                 bullet.setVelocityX(-400);
                 bullet.body.setGravityY(-300);
                 bulletFired = true
@@ -289,19 +298,19 @@
                 });
             }
 
-            bullets.getChildren().forEach(function (bullet) {
+            bullets.getChildren().forEach(function (bullet) {  //Destroy the bullet if it is off-screen
                 if (bullet.x < 0 || bullet.x > game.config.width) {
-                    bullet.destroy();  //Destroy the bullet if it is off-screen
+                    bullet.destroy();
                 }
             });
 
-            laser.getChildren().forEach(function (laser) {
+            laser.getChildren().forEach(function (laser) {  //Destroy the laser if it is off-screen
                 if (laser.x > game.config.width + 10) {
-                    laser.destroy();  //Destroy the laser if it is off-screen
+                    laser.destroy();
                 }
             });
 
-            enemies.getChildren().forEach(function (enemy) {
+            enemies.getChildren().forEach(function (enemy) {  //Defines how enemies move to reach the player
                 if (enemy.x > player.x + 1) {
                     enemy.setVelocityX(-50);
                 }
@@ -322,38 +331,39 @@
                 }
             });
 
-            if (stop == false) {
+            if (stop == false) {  //Creates the next level
                 setLevel();
             }
 
-            if (window.reset == true) {
+            if (window.reset == true) {  //Resets the game to the first stage
                 resetGame();
             }
         }
 
-        function setLevel() {
+        function setLevel() {  //Defines how each stage is set
 
-            if (level != 0) levelText.setText('Level: ' + level);
+            if (level != 0) levelText.setText('Level: ' + level);  //Updates the level text
 
-            stop = true;
+            stop = true;  //Makes it so the next stage is created
 
-            if (loading != true) localStorage.setItem('level', level);
+            if (loading != true) localStorage.setItem('level', level);  //adds the level variable to local storage
 
             loading = false;
 
-            if (level == 1 || level == 4 || level == 6 || level == 11) {
+            if (level == 1 || level == 4 || level == 6 || level == 11) {  //Sets what stages need to remove the goal because they are moved
                 goal.clear(true, true);
             }
 
-            if (level == 12) spawnY = 300;
+            if (level == 12) spawnY = 300;  //Moves the player spawn location
             if (level == 17) spawnY = 498;
-            player.setY(spawnY);
+            player.setY(spawnY);  //Resets player position
             player.setX(spawnX);
 
+            //Sets what is made during the each stage
             if (level == 1) {
                 platforms.create(705, 430, 'ground');
                 goal.create(750, 390, 'flag');
-                levelName.setText("The Basics");
+                levelName.setText("The Basics");  //Updates the level text
             }
 
             else if (level == 2) {
@@ -372,7 +382,7 @@
                 levelName.setText("A New Goal");
             }
 
-            else if (level == 5) {
+            else if (level == 5) {  //Creates a fireball and its variables
                 var fire = projectile.create(400, 180, 'fire');
                 fire.setVelocityY(250);
                 fire.setBounce(1);
@@ -381,7 +391,7 @@
                 levelName.setText("Fireball!");
             }
 
-            else if (level == 6) {
+            else if (level == 6) {  //Creates a shuriken and its variables
                 goal.create(40, 310, 'flag');
                 var shuriken = projectile.create(100, 222, 'shuriken');
                 shuriken.anims.play('s_Spin', true);
@@ -418,7 +428,7 @@
             }
 
             else if (level == 10) {
-                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();
+                crWalls.create(527, 325, 'cracked_wall').setScale(1.375).refreshBody();  //Creates a cracked wall and upscales it, refreshing its hitbox
                 levelName.setText("Empty Space");
             }
 
@@ -438,7 +448,7 @@
                 levelName.setText("It's Back!");
             }
 
-            else if (level == 14) {
+            else if (level == 14) {  //Removes a platform at a given location, and replaces it with lava
                 var removed = platforms.getChildren().find(child => child.x === 850);
                 if (removed) removed.destroy();
                 lava.create(850, 300, 'lava');
@@ -446,14 +456,14 @@
                 levelName.setText("Danger Floor");
             }
 
-            else if (level == 15) {
+            else if (level == 15) {  //Creates an enemy and its variables
                 var wisp = enemies.create(400, 400, 'wisp');
                 wisp.body.setGravityY(-300);
                 wisp.anims.play('Flame', true);
                 levelName.setText("A New Challenger Approaches");
             }
 
-            else if (level == 16) {
+            else if (level == 16) {  //Creates a laser and its variables, resets enemy position
                 enemies.setX(400);
                 enemies.setY(400);
                 var beam = laser.create(-10, 300, 'laser');
@@ -465,44 +475,44 @@
             }
 
             else if (level == 17) {
-                clearGame();
-                platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-                end.create(500, 505, 'closedChest');
+                clearGame();  //Clears the stage
+                platforms.create(400, 568, 'ground').setScale(2).refreshBody();  //Bring back ground
+                end.create(500, 505, 'closedChest');  //Spawns the end chest
             }
 
-            level += 1;
+            level += 1;  //Increases level
         }
 
-        function reachGoal(player) {
+        function reachGoal(player) {  //Allows new stage to be created when goal is reached
             stop = false;
         }
 
         function ending() {
-            end.clear(true, true);
-            this.add.image(500, 505, 'openedChest');
-            this.physics.pause();
-            player.anims.pause();
+            end.clear(true, true);  //Removes the closed chest
+            this.add.image(500, 505, 'openedChest');  //Adds opened chest sprite
+            this.physics.pause();  //Pauses physics
+            player.anims.pause();  //Pauses player animation
             endGame = true;
             endText = this.add.text(230, 270, "You WIN!", { fontSize: '60px', fill: '#000' });
         }
 
         function hitPlayer(player) {
-            this.physics.pause();
-            player.setTint(0xff0000);
-            player.anims.play('stand');
+            this.physics.pause();  //Pauses physics
+            player.setTint(0xff0000);  //Sets player tint to red
+            player.anims.play('stand');  //Sets player animation to 'stand'
             gameOver = true;
         }
 
-        function bulletHit(bullet, thing) {
+        function bulletHit(bullet, crack) {  //Destroys bullet and cracked wall when they collide
             bullet.destroy();
-            thing.destroy();
+            crack.destroy();
         }
 
-        function bulletDestroy(bullet) {
+        function bulletDestroy(bullet) {  //Destroy bullet when it hits something
             bullet.destroy();
         }
 
-        function clearGame() {
+        function clearGame() {  //Removes most objects to clear the game
             bullets.clear(true, true);
             platforms.clear(true, true);
             lava.clear(true, true);
@@ -515,22 +525,22 @@
             end.clear(true, true);
         }
 
-        function resetGame() {
-            clearGame();
-            level = 1;
-            spawnX = 40;
+        function resetGame() {  //Resets the game
+            clearGame();  //Clears game
+            level = 1;  //Resets level number
+            spawnX = 40;  //Resets player spawn location
             spawnY = 498;
-            player.setX(spawnX)
+            player.setX(spawnX)  //Resets player position
             player.setVelocityY(0)
             player.setY(spawnY)
             window.reset = false;
-            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();  //Re-adds ground and goal from first stage
             goal.create(750, 512, 'flag');
-            levelName.setDepth(10);
+            levelName.setDepth(10);  //Moves text to top and empties it
             levelName.setText(' ');
             levelText.setDepth(10);
             levelText.setText(' ');
-            localStorage.setItem('level', 0);
+            localStorage.setItem('level', 0);  //Resets local storage
         }
 
     </script>
@@ -542,11 +552,11 @@
 
     <script>
 
-        if (localStorage.getItem('theme') === 'dark') {
+        if (localStorage.getItem('theme') === 'dark') {  //If the theme is dark, loads dark theme
             document.body.classList.add('dark-mode');
         }
         const ThemeToggleButton = document.getElementById('themeToggle');
-        ThemeToggleButton.addEventListener('click', function () {
+        ThemeToggleButton.addEventListener('click', function () {  //When dark/light toggle button pressed, set local storage theme to corresponding theme
             // Toggle the dark mode class
             document.body.classList.toggle('dark-mode');
             // Save the user's theme preference to localStorage
@@ -562,7 +572,7 @@
 
     <script>
 
-        const ResetButton = document.getElementById('resetButton');
+        const ResetButton = document.getElementById('resetButton');  //When reset button is pushed, set 'reset' to true
         ResetButton.addEventListener('click', function () {
             window.reset = true
         });
